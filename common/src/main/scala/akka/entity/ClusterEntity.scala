@@ -2,11 +2,11 @@ package akka.entity
 
 import akka.actor.{ActorRef, ActorSystem, Props}
 
-trait ClusterEntity {
+trait ClusterEntity[Requirements] {
 
-  def typeName: String = utils.Inference.getSimpleName(this.getClass.getName)
+  val typeName: String = utils.Inference.getSimpleName(this.getClass.getName)
 
-  def props: Props
+  def props(requirements: Requirements): Props
 
-  def start(implicit system: ActorSystem): ActorRef
+  def start(requirements: Requirements)(implicit system: ActorSystem): ActorRef
 }

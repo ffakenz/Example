@@ -9,8 +9,7 @@ object Inference {
   // https://github.com/mockito/mockito-scala/issues/117#issuecomment-499654664
   def getSimpleName(name: String) = {
     val withoutDollar = name.split("\\$").lastOption.getOrElse(name)
-    val withoutDot =
-      withoutDollar.split("\\.").lastOption.getOrElse(withoutDollar)
+    val withoutDot = withoutDollar.split("\\.").lastOption.getOrElse(withoutDollar)
     withoutDot
   }
 

@@ -1,14 +1,11 @@
+import akka.entity.ShardedEntity.NoRequirements
 import akka.actor.{ActorRef, ActorSystem}
 import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.management.scaladsl.AkkaManagement
-import akka.serialization.EventSerializer
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
-import model.{HappyActor, NeutralActor, SadActor}
-import model.EchoActor._
-import model.HappyActor.HappyEcho
-import model.NeutralActor.NeutralEcho
-import model.SadActor.SadEcho
+import model.person.PersonActor
+import serialization.EventSerializer
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContextExecutor}
@@ -21,8 +18,7 @@ object Main extends App {
     ConfigFactory.load()
   ).reduce(_ withFallback _)
 
-  implicit val system: ActorSystem =
-    ActorSystem("ExampleSystem", config)
+  implicit val system: ActorSystem = ActorSystem("ClusterExample", config)
   implicit val executionContext: ExecutionContextExecutor = system.dispatcher
   implicit val timeout: Timeout = 10 seconds
 
@@ -30,16 +26,36 @@ object Main extends App {
   AkkaManagement(system).start()
   ClusterBootstrap(system).start()
 
-  val happyActor: ActorRef = HappyActor.start
-  val neutralActor: ActorRef = NeutralActor.start
-  val sadActor: ActorRef = SadActor.start
+  val person: ActorRef = PersonActor.start(NoRequirements())
 
-  Seq.range(1, 50).map { i =>
-    happyActor ! HappyEcho(s"$i", i.toString, i)
-    neutralActor ! NeutralEcho(s"$i", i.toString, i)
-    sadActor ! SadEcho(s"$i", i.toString, i)
-  }
 
+
+  person ! model.person.domain.PersonCommands.PersonUpdateStatus(
+    aggregateRoot = "1",
+    deliveryId = 1,
+    status = "buying groceries at the supermarket!"
+  )
+
+  person ! model.product_cart.domain.ProductCartCommands.CreateProductCart(
+    personId = "1",
+    productCartId = "1",
+    deliveryId = 2
+  )
+
+  person ! model.product_cart.domain.ProductCartCommands.CreateProductCart(
+    personId = "1",
+    productCartId = "1",
+    deliveryId = 3
+  )
+
+  person ! model.payment.domain.PaymentCommands.RegisterPayment(
+    personId = "1",
+    productCartId = "1",
+    paymentId = "1",
+    deliveryId = 4
+  )
+
+  scribe.info("Sent all messages? and what?!")
   Await.result(system.whenTerminated, Duration.Inf)
 
 }

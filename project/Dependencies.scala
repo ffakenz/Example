@@ -3,7 +3,7 @@ import sbt._
 object Dependencies {
   // Versions
   lazy val scalaVersion = "2.13.1"
-  private lazy val akkaVersion = "2.6.1"
+  private lazy val akkaVersion = "2.6.4"
 
   // Resolvers
   lazy val commonResolvers = Seq(
@@ -48,7 +48,7 @@ object Dependencies {
   }
 
   object Cassandra extends Module {
-    lazy val AkkaPersistenceCassandraVersion = "0.101"
+    lazy val AkkaPersistenceCassandraVersion = "1.0.0-RC1"
     private def akkaPersistenceCassandraModule(name: String) =
       "com.typesafe.akka" %% name % AkkaPersistenceCassandraVersion
 

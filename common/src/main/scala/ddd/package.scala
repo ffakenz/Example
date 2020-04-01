@@ -1,4 +1,6 @@
 import akka.entity.ShardedEntity.Sharded
+import utils.Inference.getSimpleName
+
 
 package object ddd {
 
@@ -13,9 +15,17 @@ package object ddd {
   sealed trait ShardedMessage extends Aggregate with Sharded
 
   trait Command extends ShardedMessage with Deliverable {
-    override def entityId: String = aggregateRoot
-    override def shardedId: String = aggregateRoot
+    def entityId: String = aggregateRoot
+    def shardedId: String = aggregateRoot + entityId
   }
 
-  trait Event
+
+  trait Event extends Aggregate {
+    def name: String = getSimpleName(this.getClass.getName)
+  }
+
+  trait AbstractState[Event] {
+    def +(e: Event): AbstractState[Event]
+  }
+
 }

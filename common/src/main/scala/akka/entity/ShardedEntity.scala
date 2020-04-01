@@ -3,18 +3,18 @@ package akka.entity
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
 
-trait ShardedEntity extends ClusterEntity {
+trait ShardedEntity[Requirements] extends ClusterEntity[Requirements] {
 
   import ShardedEntity._
 
-  def props: Props
+  def props(requirements: Requirements): Props
 
-  def start(
+  def start(requirements: Requirements)(
       implicit
       system: ActorSystem
   ): ActorRef = ClusterSharding(system).start(
     typeName = typeName,
-    entityProps = props,
+    entityProps = props(requirements),
     settings = ClusterShardingSettings(system),
     extractEntityId = extractEntityId,
     extractShardId = extractShardId(3)
@@ -29,7 +29,7 @@ object ShardedEntity {
   def extractShardId(numberOfShards: Int): ShardRegion.ExtractShardId = {
     case s: Sharded =>
       val sharded = (s.shardedId.hashCode % numberOfShards).toString
-      scribe.info(s"Sending $s to node $sharded")
+      scribe.debug(s"Sharded $s to $sharded")
       sharded
 
   }

@@ -8,8 +8,14 @@
         </encoder>
     </appender>
 
+    <appender name="stash" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+        <destination>${LOGSTASH:-0.0.0.0:5000}</destination>
 
-    <logger name="akka" level="INFO"/>
+        <!-- encoder is required -->
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
+    </appender>
+
+    <logger name="akka" level="DEBUG"/>
     <logger name="akka.kafka" level="ERROR"/>
     <logger name="org.apache.zookeeper" level="ERROR"/>
     <logger name="org.I0Itec.zkclient" level="ERROR"/>

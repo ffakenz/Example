@@ -10,7 +10,7 @@ object CommandAliases {
     addCommandAlias("ls", "projects"),
     addCommandAlias("to", "testOnly *"),
     addCommandAlias("produce", "runMain transaction.ProducerApp"),
-    addCommandAlias("main", "run -Dakka.cluster.seed-nodes.0=akka://ClusterPCS@0.0.0.0:2551"),
+    addCommandAlias("main", "run -Dakka.cluster.seed-nodes.0=akka://ClusterExample@0.0.0.0:2551"),
     addCommandAlias("ft", "scalafmt"),
     addCommandAlias("tft", "test:scalafmt"),
     addCommandAlias("fmt", ";ft;tft"),

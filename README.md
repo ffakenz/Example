@@ -6,46 +6,63 @@ https://github.com/akka/akka-persistence-cassandra/issues/706
 It reproduces the bug around akka.tag_views:
 ##### This happens when multiple actors persist tagged events.
 ```js 
-ERROR - Persistence failure when replaying events for persistenceId [model.EchoActor|3]. Last known sequence number [0]
-java.util.concurrent.ExecutionException: com.datastax.driver.core.exceptions.ServerError: An unexpected error occurred server side on /0.0.0.0:9042: java.lang.RuntimeException: java.util.concurrent.ExecutionException: org.apache.cassandra.exceptions.ConfigurationException: Column family ID mismatch (found c860d630-7249-11ea-9908-d984957af244; expected c84c8ae0-7249-11ea-9908-d984957af244)
-        at com.google.common.util.concurrent.AbstractFuture.getDoneValue(AbstractFuture.java:552)
-        at com.google.common.util.concurrent.AbstractFuture.get(AbstractFuture.java:513)
-        at akka.persistence.cassandra.package$$anon$1.$anonfun$run$1(package.scala:41)
-        at scala.util.Try$.apply(Try.scala:210)
-        at akka.persistence.cassandra.package$$anon$1.run(package.scala:41)
-        at akka.dispatch.TaskInvocation.run(AbstractDispatcher.scala:47)
-        at akka.dispatch.ForkJoinExecutorConfigurator$AkkaForkJoinTask.exec(ForkJoinExecutorConfigurator.scala:47)
-        at java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:289)
-        at java.util.concurrent.ForkJoinPool$WorkQueue.runTask(ForkJoinPool.java:1056)
-        at java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:1692)
-        at java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:157)
-Caused by: com.datastax.driver.core.exceptions.ServerError: An unexpected error occurred server side on /0.0.0.0:9042: java.lang.RuntimeException: java.util.concurrent.ExecutionException: org.apache.cassandra.exceptions.ConfigurationException: Column family ID mismatch (found c860d630-7249-11ea-9908-d984957af244; expected c84c8ae0-7249-11ea-9908-d984957af244)
-        at com.datastax.driver.core.Responses$Error.asException(Responses.java:153)
+ERROR - Cassandra Journal has experienced an unexpected error and requires an ActorSystem restart.
+java.lang.IllegalStateException: Expected events to be ordered by seqNr. PersonActor-1 Events: Vector(
+    (PersonActor-1,1,bc5cf490-7447-11ea-9c03-8f2919737ff1),
+    (PersonActor-1,1,bc690280-7447-11ea-9c03-8f2919737ff1),
+    (PersonActor-1,2,bc690281-7447-11ea-9c03-8f2919737ff1),
+    (PersonActor-1,3,bc77f6a0-7447-11ea-9c03-8f2919737ff1),
+    (PersonActor-1,4,bc77f6a1-7447-11ea-9c03-8f2919737ff1),
+    (PersonActor-1,5,bc7c1550-7447-11ea-9c03-8f2919737ff1),
+    (PersonActor-1,6,bc7c1551-7447-11ea-9c03-8f2919737ff1),
+    (PersonActor-1,7,bc7dea10-7447-11ea-9c03-8f2919737ff1),
+    (PersonActor-1,8,bc7dea11-7447-11ea-9c03-8f2919737ff1)
+)
+    at akka.persistence.cassandra.journal.TagWriter.$anonfun$createTagWriteSummary$1(TagWriter.scala:359)
+    at scala.collection.IterableOnceOps.foldLeft(IterableOnce.scala:636)
+    at scala.collection.IterableOnceOps.foldLeft$(IterableOnce.scala:632)
+    at scala.collection.AbstractIterable.foldLeft(Iterable.scala:921)
+    at akka.persistence.cassandra.journal.TagWriter.createTagWriteSummary(TagWriter.scala:352)
+    at akka.persistence.cassandra.journal.TagWriter.akka$persistence$cassandra$journal$TagWriter$$write(TagWriter.scala:337)
+    at akka.persistence.cassandra.journal.TagWriter$$anonfun$akka$persistence$cassandra$journal$TagWriter$$idle$1.applyOrElse(TagWriter.scala:148)
+    at akka.actor.Actor.aroundReceive(Actor.scala:534)
+    at akka.actor.Actor.aroundReceive$(Actor.scala:532)
+    at akka.persistence.cassandra.journal.TagWriter.akka$actor$Timers$$super$aroundReceive(TagWriter.scala:98)
+    at akka.actor.Timers.aroundReceive(Timers.scala:51)
+    at akka.actor.Timers.aroundReceive$(Timers.scala:40)
+    at akka.persistence.cassandra.journal.TagWriter.aroundReceive(TagWriter.scala:98)
+    at akka.actor.ActorCell.receiveMessage(ActorCell.scala:573)
+    at akka.actor.ActorCell.invoke(ActorCell.scala:543)
+    at akka.dispatch.Mailbox.processMailbox(Mailbox.scala:269)
+    at akka.dispatch.Mailbox.run(Mailbox.scala:230)
+    at akka.dispatch.Mailbox.exec(Mailbox.scala:242)
+    at java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:289)
+    at java.util.concurrent.ForkJoinPool$WorkQueue.runTask(ForkJoinPool.java:1056)
+    at java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:1692)
+    at java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:157)
 ```
 
 ----------------------------------------------------
 
-To replicate the bug on your computer run:
+To replicate the bug on your computer:
 
-```bash
-# start up cassandra  
-docker-compose -f ./assets/docker-compose.yml down -v
+- First run start up the cassandra container:
+```
 docker-compose -f ./assets/docker-compose.yml up -d
-
-# start up 3 application nodes
-sh node1.sh &
-sh node2.sh &
-sh node3.sh &
-sleep 100
-
-# start up the producer main app
+```
+- Then initialize the cassandra db
+```
+docker exec -i cassandra cqlsh < setup_akka_tables.cql
+```
+- Finally start up the producer main app
+```
 sh main.sh
 ```
-
-
-##### or just
+- In order to take release resources, please do not forget to run 
 ```ash 
-sh runAll.sh
+sh shut_down.sh
 ```
 
-----------------------------------------------------
+Please note the error does not have a 100% guarantee to be reproduced.
+So please repeat the steps above if needed until it happens.
+
